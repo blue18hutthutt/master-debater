@@ -1,0 +1,69 @@
+# See https://help.github.com/articles/ignoring-files/
+
+# Node.js dependencies
+node_modules/
+.pnp
+.pnp.*
+pnpm-lock.yaml
+
+# Yarn (if ever used)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+.env.*.local
+.env.venv
+
+# Build output (Next.js, Turborepo, general)
+.next/
+.out/
+dist/
+turbo/
+.turbo/
+.cache/
+build/
+coverage/
+
+# Vercel (deployment metadata)
+.vercel
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+venv/
+
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
+prisma/migrations/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+

@@ -1,0 +1,23 @@
+[project]
+name = "debate-service"
+version = "0.1.0"
+description = "FastAPI + LangGraph backend for the Master Debater app"
+authors = [{ name = "Philip Nguyen", email = "philip.thomas82@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "langchain",
+    "langgraph",
+    "pydantic",
+    "httpx",
+    "openai",
+    "python-dotenv"
+]
+
+[tool.uv]
+# optional if you want uv to install and manage your virtualenv
+venv = ".venv"
+
