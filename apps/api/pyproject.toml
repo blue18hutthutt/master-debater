@@ -14,7 +14,9 @@ dependencies = [
     "pydantic",
     "httpx",
     "openai",
-    "python-dotenv"
+    "python-dotenv",
+    "sqlalchemy",
+    "alembic"
 ]
 
 [tool.uv]

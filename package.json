@@ -7,6 +7,18 @@
   "scripts": {
     "dev:ui": "turbo run dev",
     "dev:api": "cd apps/api && uvicorn main:app --reload --port 8000",
+    "db:makemigration": "cd apps/api/debate-service && alembic revision --autogenerate -m",
+    "db:migrate": "cd apps/api/debate-service && alembic upgrade head",
+    "db:reset": "rm -f apps/api/debate-service/db/masterdebater.db && pnpm db:migrate",
+    "init-db": "python scripts/seed_data.py",
+    "migration:create": "alembic revision --autogenerate -m",
+    "migration:up": "alembic upgrade head",
+    "migration:up:one": "alembic upgrade +1",
+    "migration:down": "alembic downgrade -1",
+    "migration:down:all": "alembic downgrade base",
+    "migration:history": "alembic history",
+    "migration:current": "alembic current",
+    "migration:show-sql": "alembic upgrade head --sql",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -1,0 +1,30 @@
+{
+  "name": "debate-service",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "uvicorn app:app --reload --host 0.0.0.0 --port 8000",
+    "start": "uvicorn app:app --host 0.0.0.0 --port 8000",
+    "init-db": "python scripts/seed_data.py",
+    "migration:create": "alembic revision --autogenerate -m",
+    "migration:empty": "alembic revision -m",
+    "migration:up": "alembic upgrade head",
+    "migration:up:one": "alembic upgrade +1",
+    "migration:down": "alembic downgrade -1",
+    "migration:down:all": "alembic downgrade base",
+    "migration:history": "alembic history",
+    "migration:history:verbose": "alembic history -v",
+    "migration:current": "alembic current",
+    "migration:show-sql": "alembic upgrade head --sql",
+    "db:reset": "rm -f db/masterdebater.db && alembic upgrade head",
+    "db:downgrade:all": "alembic downgrade base",
+    "db:rebuild": "npm run db:downgrade:all && alembic upgrade head",
+    "db:init": "mkdir -p db && touch db/masterdebater.db && alembic upgrade head",
+    "db:schema": "sqlite3 db/masterdebater.db \".schema\"",
+    "db:tables": "sqlite3 db/masterdebater.db \".tables\"",
+    "db:browse": "sqlite3 db/masterdebater.db",    
+    "lint": "flake8 . && black . --check && isort . --check",
+    "format": "black . && isort .",
+    "test": "pytest"
+  }
+}
