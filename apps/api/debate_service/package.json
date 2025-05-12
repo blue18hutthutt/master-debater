@@ -7,7 +7,7 @@
     "start": "uvicorn app:app --host 0.0.0.0 --port 8000",
     "init-db": "python scripts/seed_data.py",
     "migration:create": "alembic revision --autogenerate -m",
-    "migration:empty": "alembic revision -m",
+    "migration:create_empty": "alembic revision -m",
     "migration:up": "alembic upgrade head",
     "migration:up:one": "alembic upgrade +1",
     "migration:down": "alembic downgrade -1",

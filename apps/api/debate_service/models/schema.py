@@ -1,4 +1,4 @@
-# apps/api/debate-service/app/models/models.py
+# apps/api/debate_service/models/schema.py
 from sqlalchemy import Column, String, Boolean, Integer, Float, ForeignKey, DateTime, Text, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -29,7 +29,7 @@ class LLMConfig(Base):
     
     config_id = Column(String, primary_key=True, default=generate_uuid)
     name = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # 'debater', 'judge', 'moderator'
+    role = Column(String, nullable=False)  # 'general' instead of specific roles
     model = Column(String, nullable=False)
     base_prompt = Column(Text, nullable=False)
     temperature = Column(Float, nullable=False, default=0.7)
@@ -41,6 +41,50 @@ class LLMConfig(Base):
     # Relationships
     users = relationship("User", back_populates="llm_config")
 
+class DebateFormat(Base):
+    __tablename__ = "debate_formats"
+    
+    format_id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False, unique=True)
+    description = Column(String)
+    structure = Column(String, nullable=False)  # 'strict', 'flexible'
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # Relationships
+    format_phases = relationship("DebateFormatPhase", back_populates="debate_format", order_by="DebateFormatPhase.sequence")
+    debates = relationship("Debate", back_populates="debate_format")
+
+class DebateFormatPhase(Base):
+    __tablename__ = "debate_format_phases"
+    
+    phase_id = Column(String, primary_key=True, default=generate_uuid)
+    format_id = Column(String, ForeignKey("debate_formats.format_id"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text)
+    sequence = Column(Integer, nullable=False)
+    prompt_template = Column(Text)
+    turn_limit = Column(Integer)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # Relationships
+    debate_format = relationship("DebateFormat", back_populates="format_phases")
+
+class ScoringCriteria(Base):
+    __tablename__ = "scoring_criteria"
+    
+    criteria_id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    max_score = Column(Integer, nullable=False, default=10)
+    weight = Column(Float, nullable=False, default=1.0)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # Relationships
+    criteria_scores = relationship("CriteriaScore", back_populates="criteria")
+
 class Debate(Base):
     __tablename__ = "debates"
     
@@ -48,7 +92,7 @@ class Debate(Base):
     title = Column(String, nullable=False)
     description = Column(String)
     proposition = Column(Text, nullable=False)
-    format = Column(String, nullable=False)
+    format_id = Column(String, ForeignKey("debate_formats.format_id"), nullable=False)  # Changed from format string to format_id
     status = Column(String, nullable=False)
     moderator_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     time_limit_minutes = Column(Integer)
@@ -57,23 +101,13 @@ class Debate(Base):
     completed_at = Column(DateTime)
     
     # Relationships
+    debate_format = relationship("DebateFormat", back_populates="debates")
+    moderator = relationship("User", foreign_keys=[moderator_id])
     participants = relationship("DebateParticipant", back_populates="debate")
     turns = relationship("DebateTurn", back_populates="debate")
     moderator_comments = relationship("ModeratorComment", back_populates="debate")
     checkpoints = relationship("DebateCheckpoint", back_populates="debate")
     scores = relationship("DebateScore", back_populates="debate")
-
-class DebateFormat(Base):
-    __tablename__ = "debate_formats"
-    
-    format_id = Column(String, primary_key=True, default=generate_uuid)
-    name = Column(String, nullable=False, unique=True)
-    description = Column(String)
-    phases = Column(String, nullable=False)  # JSON array of phase names
-    turn_limits = Column(String)  # JSON object mapping phases to turn limits
-    structure = Column(String, nullable=False)  # 'strict', 'flexible'
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
 class DebateParticipant(Base):
     __tablename__ = "debate_participants"
@@ -82,15 +116,19 @@ class DebateParticipant(Base):
     debate_id = Column(String, ForeignKey("debates.debate_id"), nullable=False)
     user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     side = Column(String, nullable=False)  # 'affirmative', 'negative', 'moderator', 'judge'
+    joined_at = Column(DateTime, default=datetime.datetime.utcnow)
+    left_at = Column(DateTime)
     
     # Relationships
     debate = relationship("Debate", back_populates="participants")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
     turns = relationship("DebateTurn", back_populates="participant")
     memories = relationship("LLMMemory", back_populates="participant")
     judge_scores = relationship("DebateScore", back_populates="judge", foreign_keys="DebateScore.judge_id")
-    __table_args__ = (UniqueConstraint("debate_id", "user_id", name="unique_participant"),)
-
+    
+    __table_args__ = (
+        UniqueConstraint('debate_id', 'user_id', name='unique_participant'),
+    )
 
 class DebateTurn(Base):
     __tablename__ = "debate_turns"
@@ -109,8 +147,10 @@ class DebateTurn(Base):
     participant = relationship("DebateParticipant", back_populates="turns")
     moderator_comments = relationship("ModeratorComment", back_populates="turn")
     checkpoints = relationship("DebateCheckpoint", back_populates="last_turn")
-    __table_args__ = (UniqueConstraint("debate_id", "turn_number", name="unique_turn_number"),)
-
+    
+    __table_args__ = (
+        UniqueConstraint('debate_id', 'turn_number', name='unique_turn_number'),
+    )
 
 class ModeratorComment(Base):
     __tablename__ = "moderator_comments"
@@ -125,20 +165,6 @@ class ModeratorComment(Base):
     # Relationships
     debate = relationship("Debate", back_populates="moderator_comments")
     turn = relationship("DebateTurn", back_populates="moderator_comments")
-
-class ScoringCriteria(Base):
-    __tablename__ = "scoring_criteria"
-    
-    criteria_id = Column(String, primary_key=True, default=generate_uuid)
-    name = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
-    max_score = Column(Integer, nullable=False, default=10)
-    weight = Column(Float, nullable=False, default=1.0)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    
-    # Relationships
-    criteria_scores = relationship("CriteriaScore", back_populates="criteria")
 
 class DebateScore(Base):
     __tablename__ = "debate_scores"
@@ -155,8 +181,10 @@ class DebateScore(Base):
     debate = relationship("Debate", back_populates="scores")
     judge = relationship("DebateParticipant", back_populates="judge_scores", foreign_keys=[judge_id])
     criteria_scores = relationship("CriteriaScore", back_populates="debate_score")
-    __table_args__ = (UniqueConstraint("debate_id", "judge_id", name="unique_judge_score"),)
-
+    
+    __table_args__ = (
+        UniqueConstraint('debate_id', 'judge_id', name='unique_judge_score'),
+    )
 
 class CriteriaScore(Base):
     __tablename__ = "criteria_scores"
@@ -170,7 +198,10 @@ class CriteriaScore(Base):
     # Relationships
     debate_score = relationship("DebateScore", back_populates="criteria_scores")
     criteria = relationship("ScoringCriteria", back_populates="criteria_scores")
-    __table_args__ = (UniqueConstraint("score_id", "criteria_id", name="unique_criteria_score"),)
+    
+    __table_args__ = (
+        UniqueConstraint('score_id', 'criteria_id', name='unique_criteria_score'),
+    )
 
 class DebateCheckpoint(Base):
     __tablename__ = "debate_checkpoints"
@@ -198,4 +229,7 @@ class LLMMemory(Base):
     
     # Relationships
     participant = relationship("DebateParticipant", back_populates="memories")
-    __table_args__ = (UniqueConstraint("participant_id", "debate_id", "memory_key", name="unique_memory_key"),)
+    
+    __table_args__ = (
+        UniqueConstraint('participant_id', 'debate_id', 'memory_key', name='unique_memory_key'),
+    )

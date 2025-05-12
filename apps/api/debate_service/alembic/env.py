@@ -8,7 +8,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Add the parent directory to the Python path to make imports work
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import your models here to ensure Alembic detects them
 from models.schema import Base

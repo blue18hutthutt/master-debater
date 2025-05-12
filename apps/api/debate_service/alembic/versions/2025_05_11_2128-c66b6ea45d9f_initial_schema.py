@@ -1,8 +1,8 @@
-"""create initial schema tables
+"""initial_schema
 
-Revision ID: e696f79805af
+Revision ID: c66b6ea45d9f
 Revises: 
-Create Date: 2025-05-11 15:12:26.657890
+Create Date: 2025-05-11 21:28:40.833477
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e696f79805af'
+revision: str = 'c66b6ea45d9f'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,8 +25,6 @@ def upgrade() -> None:
     sa.Column('format_id', sa.String(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('phases', sa.String(), nullable=False),
-    sa.Column('turn_limits', sa.String(), nullable=True),
     sa.Column('structure', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -56,6 +54,19 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('criteria_id')
     )
+    op.create_table('debate_format_phases',
+    sa.Column('phase_id', sa.String(), nullable=False),
+    sa.Column('format_id', sa.String(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('sequence', sa.Integer(), nullable=False),
+    sa.Column('prompt_template', sa.Text(), nullable=True),
+    sa.Column('turn_limit', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['format_id'], ['debate_formats.format_id'], ),
+    sa.PrimaryKeyConstraint('phase_id')
+    )
     op.create_table('users',
     sa.Column('user_id', sa.String(), nullable=False),
     sa.Column('username', sa.String(), nullable=False),
@@ -73,13 +84,14 @@ def upgrade() -> None:
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('proposition', sa.Text(), nullable=False),
-    sa.Column('format', sa.String(), nullable=False),
+    sa.Column('format_id', sa.String(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('moderator_id', sa.String(), nullable=False),
     sa.Column('time_limit_minutes', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('completed_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['format_id'], ['debate_formats.format_id'], ),
     sa.ForeignKeyConstraint(['moderator_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('debate_id')
     )
@@ -88,6 +100,8 @@ def upgrade() -> None:
     sa.Column('debate_id', sa.String(), nullable=False),
     sa.Column('user_id', sa.String(), nullable=False),
     sa.Column('side', sa.String(), nullable=False),
+    sa.Column('joined_at', sa.DateTime(), nullable=True),
+    sa.Column('left_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['debate_id'], ['debates.debate_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('participant_id'),
@@ -180,6 +194,7 @@ def downgrade() -> None:
     op.drop_table('debate_participants')
     op.drop_table('debates')
     op.drop_table('users')
+    op.drop_table('debate_format_phases')
     op.drop_table('scoring_criteria')
     op.drop_table('llm_configs')
     op.drop_table('debate_formats')

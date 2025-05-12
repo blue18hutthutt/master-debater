@@ -7,9 +7,9 @@
   "scripts": {
     "dev:ui": "turbo run dev",
     "dev:api": "cd apps/api && uvicorn main:app --reload --port 8000",
-    "db:makemigration": "cd apps/api/debate-service && alembic revision --autogenerate -m",
-    "db:migrate": "cd apps/api/debate-service && alembic upgrade head",
-    "db:reset": "rm -f apps/api/debate-service/db/masterdebater.db && pnpm db:migrate",
+    "db:makemigration": "cd apps/api/debate_service && alembic revision --autogenerate -m",
+    "db:migrate": "cd apps/api/debate_service && alembic upgrade head",
+    "db:reset": "rm -f apps/api/debate_service/db/masterdebater.db && pnpm db:migrate",
     "init-db": "python scripts/seed_data.py",
     "migration:create": "alembic revision --autogenerate -m",
     "migration:up": "alembic upgrade head",
